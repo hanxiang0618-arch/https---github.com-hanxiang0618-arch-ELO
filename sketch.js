@@ -10,6 +10,13 @@ let matchLog = "準備好開始第一場對抗了嗎？";
 let matchCount = 0;
 let gameState = "intro"; // 'intro' 或 'playing'
 
+// UI 佈局變數 (用於自適應)
+let ui = {
+  margin: 20,
+  btn1: { x: 0, y: 0, w: 120, h: 45 },
+  btn2: { x: 0, y: 0, w: 120, h: 45 }
+};
+
 function setup() {
   createCanvas(windowWidth, windowHeight);
   recordData(); // 紀錄初始數據
@@ -25,11 +32,15 @@ function draw() {
   if (gameState === "intro") {
     drawIntroScreen();
   } else {
-    // 1. 繪製左側資訊面板
-    drawDashboard();
-    
-    // 2. 繪製右側匹配區域
-    drawMatchArea();
+    if (width > 600) {
+      // 電腦版：橫向排列
+      drawDashboard(ui.margin, ui.margin, 200, 160);
+      drawMatchArea(ui.margin + 220, ui.margin, width - (ui.margin * 2 + 220), 160);
+    } else {
+      // 手機版：縱向堆疊
+      drawDashboard(ui.margin, ui.margin, width - ui.margin * 2, 130);
+      drawMatchArea(ui.margin, ui.margin + 150, width - ui.margin * 2, 180);
+    }
     
     // 3. 繪製下方的數據圖表
     drawChart();
@@ -39,72 +50,86 @@ function draw() {
 function drawIntroScreen() {
   push();
   textAlign(CENTER, CENTER);
+  let centerX = width / 2;
+  let centerY = height / 2;
   
   // 標題
   fill(50);
-  textSize(36);
+  textSize(min(width * 0.08, 36));
   textStyle(BOLD);
-  text("ELO 積分系統模擬器", width / 2, height / 2 - 80);
+  text("ELO 積分系統模擬器", centerX, centerY - 100);
   
   // 說明文字
-  textSize(16);
+  textSize(min(width * 0.04, 16));
   textStyle(NORMAL);
+  rectMode(CENTER);
   let desc = "本工具模擬競技遊戲的評分邏輯：\n\n1. ELO 是你的公開分數。\n2. MMR 是系統對你實力的隱藏評估。\n3. 當 MMR 高於 ELO 時，系統會讓你贏球加更多分，輸球扣較少。\n\n點擊下方按鈕開始模擬對戰過程。";
-  text(desc, width / 2, height / 2 + 10);
+  text(desc, centerX, centerY, width * 0.8, 200);
   
   // 開始按鈕
   fill(76, 175, 80);
   noStroke();
-  rectMode(CENTER);
-  rect(width / 2, height / 2 + 120, 140, 45, 8);
+  rect(centerX, centerY + 140, 160, 50, 10);
   fill(255);
   textSize(20);
-  text("開始體驗", width / 2, height / 2 + 120);
+  text("開始體驗", centerX, centerY + 140);
   pop();
 }
 
-function drawDashboard() {
+function drawDashboard(x, y, w, h) {
+  push();
+  translate(x, y);
   fill(255);
   stroke(200);
-  rect(20, 20, 200, 160, 10);
+  rect(0, 0, w, h, 10);
   
   fill(50);
   noStroke();
   textSize(18);
   textStyle(BOLD);
-  text("玩家資訊", 40, 50);
+  text("玩家資訊", 20, 30);
   
   textSize(14);
   textStyle(NORMAL);
   fill(0, 102, 204);
-  text("ELO (公開): " + player.elo, 40, 80);
+  text("ELO (公開): " + player.elo, 20, 60);
   fill(204, 0, 102);
-  text("MMR (隱藏): " + Math.round(player.mmr), 40, 110);
+  text("MMR (隱藏): " + Math.round(player.mmr), 20, 90);
   
   fill(100);
-  text("場次: " + matchCount, 40, 140);
+  text("場次: " + matchCount, 20, 115);
+  pop();
 }
 
-function drawMatchArea() {
+function drawMatchArea(x, y, w, h) {
+  push();
+  translate(x, y);
   fill(255);
   stroke(200);
-  rect(240, 20, width - 260, 160, 10);
+  rect(0, 0, w, h, 10);
   
   fill(50);
   noStroke();
   textSize(16);
-  text(matchLog, 260, 60);
+  textAlign(LEFT, TOP);
+  text(matchLog, 20, 20, w - 40, 60);
   
-  // 按鈕 UI (簡單繪製，偵測滑鼠點擊)
+  // 更新按鈕座標以便 click 偵測
+  ui.btn1 = { x: x + 20, y: y + 90, w: (w - 60) / 2, h: 50 };
+  ui.btn2 = { x: x + 40 + ui.btn1.w, y: y + 90, w: (w - 60) / 2, h: 50 };
+  
+  // 繪製按鈕
+  textAlign(CENTER, CENTER);
   fill(76, 175, 80);
-  rect(260, 90, 120, 40, 5);
+  rect(20, 90, ui.btn1.w, ui.btn1.h, 5);
   fill(255);
-  text("隨機對戰", 290, 115);
+  text("隨機對戰", 20 + ui.btn1.w / 2, 90 + ui.btn1.h / 2);
   
   fill(33, 150, 243);
-  rect(400, 90, 120, 40, 5);
+  rect(40 + ui.btn1.w, 90, ui.btn2.w, ui.btn2.h, 5);
   fill(255);
-  text("故意連勝", 430, 115);
+  text("故意連勝", 40 + ui.btn1.w + ui.btn2.w / 2, 90 + ui.btn2.h / 2);
+  pop();
 }
 
 function drawChart() {
@@ -149,19 +174,19 @@ function drawChart() {
 function mousePressed() {
   if (gameState === "intro") {
     // 檢查「開始體驗」按鈕範圍 (居中按鈕的座標計算)
-    if (mouseX > width / 2 - 70 && mouseX < width / 2 + 70 &&
-        mouseY > height / 2 + 97 && mouseY < height / 2 + 143) {
+    if (mouseX > width / 2 - 80 && mouseX < width / 2 + 80 &&
+        mouseY > height / 2 + 115 && mouseY < height / 2 + 165) {
       gameState = "playing";
     }
     return;
   }
 
   // 隨機對戰按鈕
-  if (mouseX > 260 && mouseX < 380 && mouseY > 90 && mouseY < 130) {
+  if (mouseX > ui.btn1.x && mouseX < ui.btn1.x + ui.btn1.w && mouseY > ui.btn1.y && mouseY < ui.btn1.y + ui.btn1.h) {
     runMatch(random([0, 1])); // 隨機輸贏
   }
   // 故意連勝按鈕
-  if (mouseX > 400 && mouseX < 520 && mouseY > 90 && mouseY < 130) {
+  if (mouseX > ui.btn2.x && mouseX < ui.btn2.x + ui.btn2.w && mouseY > ui.btn2.y && mouseY < ui.btn2.y + ui.btn2.h) {
     runMatch(1); // 強制贏球
   }
 }
