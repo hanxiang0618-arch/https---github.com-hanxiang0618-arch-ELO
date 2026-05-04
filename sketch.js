@@ -32,18 +32,21 @@ function draw() {
   if (gameState === "intro") {
     drawIntroScreen();
   } else {
+    let uiBottom = 0;
     if (width > 600) {
       // 電腦版：橫向排列
       drawDashboard(ui.margin, ui.margin, 200, 160);
       drawMatchArea(ui.margin + 220, ui.margin, width - (ui.margin * 2 + 220), 160);
+      uiBottom = ui.margin + 160;
     } else {
       // 手機版：縱向堆疊
       drawDashboard(ui.margin, ui.margin, width - ui.margin * 2, 130);
       drawMatchArea(ui.margin, ui.margin + 150, width - ui.margin * 2, 180);
+      uiBottom = ui.margin + 150 + 180;
     }
     
     // 3. 繪製下方的數據圖表
-    drawChart();
+    drawChart(uiBottom);
   }
 }
 
@@ -132,11 +135,15 @@ function drawMatchArea(x, y, w, h) {
   pop();
 }
 
-function drawChart() {
+function drawChart(startY) {
   push();
   let chartWidth = width - 100;
-  let chartHeight = height - 250;
-  translate(50, height - 50);
+  let chartBottom = height - 60;
+  // 計算剩餘可用高度，並保留一點間距 (40px)
+  let chartHeight = chartBottom - startY - 40; 
+  chartHeight = max(chartHeight, 80); // 確保最少有 80px 高度不會消失
+  
+  translate(50, chartBottom);
   
   // 座標軸
   stroke(150);
@@ -165,9 +172,10 @@ function drawChart() {
   endShape();
   
   pop();
-  fill(150);
+  fill(100);
   textSize(12);
-  text("藍線: ELO (公開) | 紅線: MMR (隱藏) | 橫軸: 場次", 50, height - 20);
+  textAlign(LEFT, CENTER);
+  text("藍線: ELO | 紅線: MMR | 橫軸: 場次", 50, height - 30);
 }
 
 // 點擊事件處理
