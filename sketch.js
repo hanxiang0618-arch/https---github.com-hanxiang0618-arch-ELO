@@ -137,13 +137,24 @@ function drawMatchArea(x, y, w, h) {
 
 function drawChart(startY) {
   push();
-  let chartWidth = width - 100;
-  let chartBottom = height - 60;
-  // 計算剩餘可用高度，並保留一點間距 (40px)
-  let chartHeight = chartBottom - startY - 40; 
-  chartHeight = max(chartHeight, 80); // 確保最少有 80px 高度不會消失
+  // 1. 計算圖表可用空間
+  let topPadding = 50; // 圖表與上方文字的間距
+  let chartTop = startY + topPadding;
+  let chartBottom = height - 70; // 底部留給圖例的空間
+  let chartWidth = width - 80;
+  let chartHeight = chartBottom - chartTop;
+
+  // 2. 如果螢幕太短，確保圖表至少有基本高度但下移位置
+  if (chartHeight < 60) {
+    chartHeight = 60;
+  }
+
+  // 3. 動態計算 Y 軸範圍 (避免分數過高撞到文字)
+  let allValues = player.history.flatMap(h => [h.elo, h.mmr]);
+  let minY = min(allValues) - 50;
+  let maxY = max(allValues) + 50;
   
-  translate(50, chartBottom);
+  translate(50, chartTop + chartHeight);
   
   // 座標軸
   stroke(150);
@@ -156,7 +167,7 @@ function drawChart(startY) {
   beginShape();
   for (let i = 0; i < player.history.length; i++) {
     let x = i * (chartWidth / 20); // 最多顯示20場
-    let y = map(player.history[i].elo, 800, 2000, 0, -chartHeight);
+    let y = map(player.history[i].elo, minY, maxY, 0, -chartHeight);
     vertex(x, y);
   }
   endShape();
@@ -166,7 +177,7 @@ function drawChart(startY) {
   beginShape();
   for (let i = 0; i < player.history.length; i++) {
     let x = i * (chartWidth / 20);
-    let y = map(player.history[i].mmr, 800, 2000, 0, -chartHeight);
+    let y = map(player.history[i].mmr, minY, maxY, 0, -chartHeight);
     vertex(x, y);
   }
   endShape();
