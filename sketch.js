@@ -53,9 +53,9 @@ function draw() {
       drawMatchArea(ui.margin + 220, ui.margin, width - (ui.margin * 2 + 220), 180);
       uiBottom = ui.margin + 180;
     } else {
-      drawDashboard(ui.margin, ui.margin, width - ui.margin * 2, 130);
-      drawMatchArea(ui.margin, ui.margin + 150, width - ui.margin * 2, 220);
-      uiBottom = ui.margin + 150 + 220;
+      drawDashboard(ui.margin, ui.margin, width - ui.margin * 2, 145);
+      drawMatchArea(ui.margin, ui.margin + 165, width - ui.margin * 2, 220);
+      uiBottom = ui.margin + 165 + 220;
     }
     drawChart(uiBottom);
   }
