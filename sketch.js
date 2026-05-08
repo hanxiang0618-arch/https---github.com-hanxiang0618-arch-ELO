@@ -3,7 +3,7 @@ let opponent = { mmr: 1200, winRate: 0.5, difficulty: "普通" };
 let matchCount = 0;
 let lastMatchResult = "尚未開始對戰";
 let gameState = "intro";
-let ui = { margin: 20, btn1: {}, btn2: {}, btn3: {}, btnNext: {}, btnUndo: {} };
+let ui = { margin: 20, btn1: {}, btn2: {}, btn3: {}, btnNext: {}, btnUndo: {}, btnIntro: {} };
 const COLORS = {
   bg: 248,
   cardBg: 255,
@@ -20,17 +20,14 @@ let isMatchSettled = false;
 let stateHistory = []; // 用於存放歷史狀態以供回溯
 
 function setup() {
-  let canvas = createCanvas(windowWidth, windowHeight);
-  
-  // 針對 iOS 優化：防止畫布被拖動、橡皮筋回彈以及雙擊縮放
-  canvas.elt.style.touchAction = 'none';
-  
+  createCanvas(windowWidth, windowHeight);
   player.history.push({ elo: player.elo, mmr: player.mmr });
   generateNewOpponent();
 }
 
 function draw() {
   background(COLORS.bg);
+  cursor(ARROW); // 每幀預設重置游標
   rectMode(CORNER);
 
   if (gameState === "intro") {
@@ -54,6 +51,13 @@ function draw() {
   }
 }
 
+// 輔助函式：檢查滑鼠是否在按鈕範圍內
+function isHovering(btn) {
+  if (btn.x === undefined) return false;
+  return mouseX >= btn.x && mouseX <= btn.x + btn.w && 
+         mouseY >= btn.y && mouseY <= btn.y + btn.h;
+}
+
 function drawIntroScreen() {
   push();
   textAlign(CENTER, CENTER);
@@ -65,10 +69,16 @@ function drawIntroScreen() {
   textSize(16);
   textStyle(NORMAL);
   rectMode(CENTER);
-  text("這是一個模擬競技遊戲 MMR 與 ELO 運作的工具。\n在手機上也可流暢操作。", width / 2, height / 2, width * 0.8, 200);
+  text("這是一個模擬競技遊戲 MMR 與 ELO 運作的工具。", width / 2, height / 2, width * 0.8, 200);
   
-  fill(COLORS.win);
-  rect(width / 2, height / 2 + 140, 160, 50, 10);
+  // 更新首頁按鈕座標
+  ui.btnIntro = { x: width / 2 - 80, y: height / 2 + 115, w: 160, h: 50 };
+  
+  let hover = isHovering(ui.btnIntro);
+  if (hover) { fill(45, 180, 80); cursor(HAND); } 
+  else { fill(COLORS.win); }
+  
+  rect(width / 2, height / 2 + 140, ui.btnIntro.w, ui.btnIntro.h, 10);
   fill(255);
   textSize(18); text("進入模擬系統", width / 2, height / 2 + 140);
   pop();
@@ -96,8 +106,15 @@ function drawDashboard(x, y, w, h) {
 
   // 返回一步按鈕
   ui.btnUndo = { x: x + 20, y: y + h - 35, w: w - 40, h: 25 };
+  let hover = isHovering(ui.btnUndo);
+  
   textAlign(CENTER, CENTER);
-  fill(stateHistory.length > 0 ? 180 : 230);
+  if (stateHistory.length > 0) {
+    if (hover) { fill(150); cursor(HAND); }
+    else { fill(180); }
+  } else {
+    fill(230);
+  }
   rect(20, h - 35, w - 40, 25, 5);
   fill(255); textSize(11); text("返回一步 (撤銷)", 20 + (w - 40) / 2, h - 35 + 12);
   pop();
@@ -123,11 +140,17 @@ function drawMatchArea(x, y, w, h) {
 
     textAlign(CENTER, CENTER);
     textSize(12);
-    fill(COLORS.win); rect(20, 120, btnW, 45, 5);
+    
+    if (isHovering(ui.btn1)) { fill(45, 180, 80); cursor(HAND); } else fill(COLORS.win);
+    rect(20, 120, btnW, 45, 5);
     fill(255); text("贏", 20 + btnW / 2, 120 + 22);
-    fill(COLORS.loss); rect(40 + btnW, 120, btnW, 45, 5);
+    
+    if (isHovering(ui.btn2)) { fill(220, 50, 40); cursor(HAND); } else fill(COLORS.loss);
+    rect(40 + btnW, 120, btnW, 45, 5);
     fill(255); text("輸", 40 + btnW + btnW / 2, 120 + 22);
-    fill(COLORS.accent); rect(60 + 2 * btnW, 120, btnW, 45, 5);
+    
+    if (isHovering(ui.btn3)) { fill(75, 70, 200); cursor(HAND); } else fill(COLORS.accent);
+    rect(60 + 2 * btnW, 120, btnW, 45, 5);
     fill(255); text("5連勝", 60 + 2 * btnW + btnW / 2, 120 + 22);
   } else {
     textSize(16); textStyle(BOLD); fill(150); text("✓ 對戰完成", 20, 20);
@@ -136,7 +159,8 @@ function drawMatchArea(x, y, w, h) {
     
     ui.btnNext = { x: x + 20, y: y + 120, w: w - 40, h: 45 };
     textAlign(CENTER, CENTER);
-    fill(COLORS.textSub); rect(20, 120, w - 40, 45, 5);
+    if (isHovering(ui.btnNext)) { fill(80); cursor(HAND); } else fill(COLORS.textSub);
+    rect(20, 120, w - 40, 45, 5);
     fill(255); text("尋找下一個對手", 20 + (w - 40) / 2, 120 + 22);
   }
   pop();
@@ -341,7 +365,7 @@ function undo() {
 
 function mousePressed() {
   if (gameState === "intro") {
-    if (mouseX > width/2-80 && mouseX < width/2+80 && mouseY > height/2+115 && mouseY < height/2+165) {
+    if (isHovering(ui.btnIntro)) {
       gameState = "playing";
     }
     return;
